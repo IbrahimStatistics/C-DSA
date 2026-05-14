@@ -1,0 +1,330 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Dynamic data structure
+
+typedef struct Node
+{
+    int coeff;
+    int exp;
+    struct Node *next;
+} Node;
+
+typedef struct Polynomial
+{
+    Node *head;
+    int size;
+} Polynomial;
+
+void initPolynomial(Polynomial *P)
+{
+    if (P == NULL)
+        return;
+
+    P->head = NULL;
+    P->size = 0;
+}
+
+Node *createNode(int coeff, int exp)
+{
+    Node *newNode = (Node *)malloc(sizeof(Node));
+
+    if (newNode == NULL)
+        return NULL;
+
+    newNode->coeff = coeff;
+    newNode->exp = exp;
+    newNode->next = NULL;
+
+    return newNode;
+}
+
+void insert(Polynomial *P, int coeff, int exp)
+{
+    if (P == NULL || coeff == 0)
+        return;
+
+    Node *newNode = createNode(coeff, exp);
+
+    if (newNode == NULL)
+        return;
+
+    // Insert at beginning
+    if (P->head == NULL || exp > P->head->exp)
+    {
+        newNode->next = P->head;
+        P->head = newNode;
+        P->size++;
+
+        return;
+    }
+
+    Node *prev = NULL;
+    Node *curr = P->head;
+
+    while (curr != NULL && curr->exp > exp)
+    {
+        prev = curr;
+        curr = curr->next;
+    }
+
+    // Merge terms with same exponent
+    if (curr != NULL && curr->exp == exp)
+    {
+        curr->coeff += coeff;
+
+        free(newNode);
+
+        // Remove node if coefficient becomes zero
+        if (curr->coeff == 0)
+        {
+            if (prev == NULL)
+            {
+                P->head = curr->next;
+            }
+            else
+            {
+                prev->next = curr->next;
+            }
+
+            free(curr);
+            P->size--;
+        }
+
+        return;
+    }
+
+    // Insert in middle or end
+    newNode->next = curr;
+    prev->next = newNode;
+
+    P->size++;
+}
+
+void printPolynomial(const Polynomial *P)
+{
+    if (P == NULL || P->head == NULL)
+    {
+        printf("()\n");
+        return;
+    }
+
+    Node *temp = P->head;
+
+    printf("(");
+
+    while (temp != NULL)
+    {
+        printf("(%d,%d)", temp->coeff, temp->exp);
+
+        if (temp->next != NULL)
+        {
+            printf(",");
+        }
+
+        temp = temp->next;
+    }
+
+    printf(")\n");
+}
+
+Polynomial *createPolynomial(void)
+{
+    Polynomial *P = (Polynomial *)malloc(sizeof(Polynomial));
+
+    if (P == NULL)
+        return NULL;
+
+    initPolynomial(P);
+
+    return P;
+}
+
+Polynomial *copyPolynomial(const Polynomial *src)
+{
+    if (src == NULL)
+        return NULL;
+
+    Polynomial *copy = createPolynomial();
+
+    if (copy == NULL)
+        return NULL;
+
+    Node *curr = src->head;
+
+    while (curr != NULL)
+    {
+        insert(copy, curr->coeff, curr->exp);
+        curr = curr->next;
+    }
+
+    return copy;
+}
+
+Polynomial *addPolynomial(const Polynomial *A, const Polynomial *B)
+{
+    if (A == NULL || B == NULL)
+        return NULL;
+
+    Polynomial *sum = createPolynomial();
+
+    if (sum == NULL)
+        return NULL;
+
+    Node *i = A->head;
+    Node *j = B->head;
+
+    while (i != NULL && j != NULL)
+    {
+        if (i->exp == j->exp)
+        {
+            insert(sum, i->coeff + j->coeff, i->exp);
+
+            i = i->next;
+            j = j->next;
+        }
+        else if (i->exp > j->exp)
+        {
+            insert(sum, i->coeff, i->exp);
+            i = i->next;
+        }
+        else
+        {
+            insert(sum, j->coeff, j->exp);
+            j = j->next;
+        }
+    }
+
+    while (i != NULL)
+    {
+        insert(sum, i->coeff, i->exp);
+        i = i->next;
+    }
+
+    while (j != NULL)
+    {
+        insert(sum, j->coeff, j->exp);
+        j = j->next;
+    }
+
+    return sum;
+}
+
+Polynomial *multiplyPolynomial(const Polynomial *A, const Polynomial *B)
+{
+    if (A == NULL || B == NULL)
+        return NULL;
+
+    Polynomial *product = createPolynomial();
+
+    if (product == NULL)
+        return NULL;
+
+    if (A->head == NULL || B->head == NULL)
+    {
+        return product;
+    }
+
+    Node *i = A->head;
+
+    while (i != NULL)
+    {
+        Node *j = B->head;
+
+        while (j != NULL)
+        {
+            insert(
+                product,
+                i->coeff * j->coeff,
+                i->exp + j->exp
+            );
+
+            j = j->next;
+        }
+
+        i = i->next;
+    }
+
+    return product;
+}
+
+void freePolynomial(Polynomial *P)
+{
+    if (P == NULL)
+        return;
+
+    Node *curr = P->head;
+
+    while (curr != NULL)
+    {
+        Node *next = curr->next;
+
+        free(curr);
+
+        curr = next;
+    }
+
+    free(P);
+}
+
+int main(void)
+{
+    Polynomial P1;
+
+    initPolynomial(&P1);
+
+    insert(&P1, 1, 1);
+    insert(&P1, 5, 3);
+    insert(&P1, 2, 2);
+
+    printf("Polynomial A: ");
+    printPolynomial(&P1);
+
+    Polynomial P2;
+
+    initPolynomial(&P2);
+
+    insert(&P2, 7, 3);
+    insert(&P2, 3, 2);
+    insert(&P2, 2, 1);
+
+    printf("Polynomial B: ");
+    printPolynomial(&P2);
+
+    printf("\n");
+
+    Polynomial *sum = addPolynomial(&P1, &P2);
+
+    printf("Sum of P1 and P2: ");
+
+    if (sum != NULL)
+    {
+        printPolynomial(sum);
+    }
+    else
+    {
+        printf("Memory allocation failed\n");
+    }
+
+    printf("\n");
+
+    Polynomial *product = multiplyPolynomial(&P1, &P2);
+
+    printf("Product of P1 and P2: ");
+
+    if (product != NULL)
+    {
+        printPolynomial(product);
+    }
+    else
+    {
+        printf("Memory allocation failed\n");
+    }
+
+    printf("\n");
+
+    freePolynomial(sum);
+    freePolynomial(product);
+
+    return 0;
+}
