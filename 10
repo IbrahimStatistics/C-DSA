@@ -1,0 +1,128 @@
+#include <stdio.h>
+#include <stdlib.h>
+#define MAX 10
+#define INF 99999
+
+int graph[MAX][MAX];
+int n;
+
+void primMST() {
+    int parent[MAX], key[MAX], inMST[MAX];
+    int i, u, v, min, totalCost = 0;
+    for (i = 0; i < n; i++) {
+        key[i] = INF;
+        inMST[i] = 0;
+        parent[i] = -1;
+    }
+    key[0] = 0;
+    for (int cnt = 0; cnt < n - 1; cnt++) {
+        min = INF;
+        u = -1;
+        for (i = 0; i < n; i++)
+            if (!inMST[i] && key[i] < min) {
+                min = key[i];
+                u = i;
+            }
+        if (u == -1) break;
+        inMST[u] = 1;
+        for (v = 0; v < n; v++)
+            if (graph[u][v] && !inMST[v] && graph[u][v] < key[v]) {
+                key[v] = graph[u][v];
+                parent[v] = u;
+            }
+    }
+    printf("\nMinimum Spanning Tree (Prim's)\n");
+    printf("From   To     Weight\n");
+    for (i = 1; i < n; i++) {
+        printf("%-6d %-6d %d\n", parent[i], i, graph[parent[i]][i]);
+        totalCost += graph[parent[i]][i];
+    }
+    printf("Total MST Cost: %d\n", totalCost);
+}
+
+void dijkstra(int src) {
+    int dist[MAX], visited[MAX], i, u, v, min;
+    for (i = 0; i < n; i++) {
+        dist[i] = INF;
+        visited[i] = 0;
+    }
+    dist[src] = 0;
+    for (int cnt = 0; cnt < n - 1; cnt++) {
+        min = INF;
+        u = -1;
+        for (i = 0; i < n; i++)
+            if (!visited[i] && dist[i] < min) {
+                min = dist[i];
+                u = i;
+            }
+        if (u == -1) break;
+        visited[u] = 1;
+        for (v = 0; v < n; v++)
+            if (graph[u][v] && !visited[v] && dist[u] + graph[u][v] < dist[v])
+                dist[v] = dist[u] + graph[u][v];
+    }
+    printf("\nDijkstra's Shortest Path from Device %d\n", src);
+    printf("Device    Distance\n");
+    for (i = 0; i < n; i++) {
+        if (dist[i] == INF)
+            printf("%-10d INF\n", i);
+        else
+            printf("%-10d %d\n", i, dist[i]);
+    }
+}
+
+void bfs(int src) {
+    int visited[MAX] = {0};
+    int queue[MAX], front = 0, rear = 0, v;
+    visited[src] = 1;
+    queue[rear++] = src;
+    printf("\nBFS from Device %d\n", src);
+    while (front < rear) {
+        int u = queue[front++];
+        printf("%d ", u);
+        for (v = 0; v < n; v++)
+            if (graph[u][v] && !visited[v]) {
+                visited[v] = 1;
+                queue[rear++] = v;
+            }
+    }
+    printf("\n");
+}
+
+int dfsVisited[MAX];
+void dfsUtil(int u) {
+    dfsVisited[u] = 1;
+    printf("%d ", u);
+    for (int v = 0; v < n; v++)
+        if (graph[u][v] && !dfsVisited[v]) dfsUtil(v);
+}
+
+void dfs(int src) {
+    for (int i = 0; i < n; i++) dfsVisited[i] = 0;
+    printf("\nDFS from Device %d\n", src);
+    dfsUtil(src);
+    printf("\n");
+}
+
+int main() {
+    int e, u, v, w, src, i, j;
+    printf("Number of devices: ");
+    scanf("%d", &n);
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++) graph[i][j] = 0;
+    printf("Number of links: ");
+    scanf("%d", &e);
+    printf("Edges (u v weight):\n");
+    for (i = 0; i < e; i++) {
+        scanf("%d %d %d", &u, &v, &w);
+        graph[u][v] = w;
+        graph[v][u] = w;
+    }
+    printf("Source device: ");
+    scanf("%d", &src);
+    primMST();
+    dijkstra(src);
+    bfs(src);
+    dfs(src);
+    return 0;
+}
