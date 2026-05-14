@@ -1,0 +1,65 @@
+#include<stdio.h>
+#define MAX 1000
+
+typedef struct List {
+    int data[MAX];
+    int size;
+} List;
+
+void printList(List *L) {
+    for(int i = 0; i < L->size; i++) {
+        printf("%d ", L->data[i]);
+    }
+}
+
+void initList(List *L) {
+    L->size = 0;
+}
+
+void insert(List *L, int pos, int val) {
+    if(L->size == MAX) return;
+    if(pos < 0 || pos > L->size) return;
+
+    int *ptr = L->data;
+
+    for(int i = L->size; i > pos; i--) {
+        *(ptr + i) = *(ptr + i - 1);
+    }
+
+    *(ptr + pos) = val;
+    L->size++;
+}
+
+void delete(List *L, int pos) {
+    if(L->size == 0) return;
+    if(pos < 0 || pos >= L->size) return;
+
+    int *ptr = L->data;
+
+    for(int i = pos; i < L->size - 1; i++) {
+        *(ptr + i) = *(ptr + i + 1);
+    }
+
+    L->size--;
+}
+
+int main() {
+    List L1;
+    initList(&L1);
+
+    insert(&L1, 0, 10);
+    insert(&L1, 1, 20);
+    insert(&L1, 2, 30);
+
+    printf("\nAfter Insertion: ");
+    printList(&L1);
+
+    delete(&L1, 1);
+
+    printf("\nAfter Deletion: ");
+    printList(&L1);
+    
+    printf("\n");
+
+    return 0;
+}
