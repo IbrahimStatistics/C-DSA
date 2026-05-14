@@ -1,0 +1,150 @@
+#include <stdio.h>
+#include <stdlib.h>
+#define TS 23
+
+struct node {
+    int dst;
+    struct node *nxt;
+};
+
+struct slot {
+    int key;
+    struct node *head;
+};
+
+struct slot ht[TS];
+int n;
+
+int h1(int v) { return v % TS; }
+int h2(int v) { return 1 + (v % (TS - 2)); }
+int probe(int v, int i) {
+    return (h1(v) + i * h2(v)) % TS;
+}
+
+int getOrIns(int v) {
+    int i, idx;
+    for (i = 0; i < TS; i++) {
+        idx = probe(v, i);
+        if (ht[idx].key == v) return idx;
+        if (ht[idx].key == -1) {
+            ht[idx].key = v;
+            ht[idx].head = NULL;
+            return idx;
+        }
+    }
+    return -1;
+}
+
+int findSlot(int v) {
+    int i, idx;
+    for (i = 0; i < TS; i++) {
+        idx = probe(v, i);
+        if (ht[idx].key == v) return idx;
+        if (ht[idx].key == -1) return -1;
+    }
+    return -1;
+}
+
+void addEdge(int u, int v) {
+    int su = getOrIns(u);
+    int sv = getOrIns(v);
+    if (su == -1 || sv == -1) {
+        printf("Hash table full.\n");
+        return;
+    }
+    struct node *nu = (struct node*)malloc(sizeof(struct node));
+    nu->dst = v;
+    nu->nxt = ht[su].head;
+    ht[su].head = nu;
+    struct node *nv = (struct node*)malloc(sizeof(struct node));
+    nv->dst = u;
+    nv->nxt = ht[sv].head;
+    ht[sv].head = nv;
+}
+
+void listAdj(int v) {
+    int s = findSlot(v);
+    if (s == -1) {
+        printf("Vertex %d not found.\n", v);
+        return;
+    }
+    printf("Adj list of %d (slot %d): ", v, s);
+    struct node *cur = ht[s].head;
+    if (!cur) {
+        printf("(none)\n");
+        return;
+    }
+    while (cur) {
+        printf("%d ", cur->dst);
+        cur = cur->nxt;
+    }
+    printf("\n");
+}
+
+int edgeExists(int u, int v) {
+    int su = findSlot(u);
+    if (su == -1) return 0;
+    struct node *cur = ht[su].head;
+    while (cur) {
+        if (cur->dst == v) return 1;
+        cur = cur->nxt;
+    }
+    return 0;
+}
+
+void dispTable() {
+    int i;
+    printf("\nSlot  Vertex  AdjList\n");
+    for (i = 0; i < TS; i++) {
+        if (ht[i].key != -1) {
+            printf("%-5d %-7d ", i, ht[i].key);
+            struct node *cur = ht[i].head;
+            while (cur) {
+                printf("%d ", cur->dst);
+                cur = cur->nxt;
+            }
+            printf("\n");
+        }
+    }
+}
+
+int main() {
+    int i, e, u, v, ch;
+    for (i = 0; i < TS; i++) {
+        ht[i].key = -1;
+        ht[i].head = NULL;
+    }
+    printf("Number of vertices (0..n-1): ");
+    scanf("%d", &n);
+    printf("Number of edges: ");
+    scanf("%d", &e);
+    printf("Edges (u v):\n");
+    for (i = 0; i < e; i++) {
+        scanf("%d %d", &u, &v);
+        addEdge(u, v);
+    }
+    printf("\nGraph (double hashing)\n");
+    dispTable();
+    do {
+        printf("\n1.Add edge 2.Adj list 3.Exists 4.Display 5.Exit\n");
+        printf("Choice: ");
+        scanf("%d", &ch);
+        if (ch == 1) {
+            printf("u v: ");
+            scanf("%d %d", &u, &v);
+            addEdge(u, v);
+            printf("Added (%d,%d)\n", u, v);
+        } else if (ch == 2) {
+            printf("Vertex: ");
+            scanf("%d", &v);
+            listAdj(v);
+        } else if (ch == 3) {
+            printf("u v: ");
+            scanf("%d %d", &u, &v);
+            printf("(%d,%d) %s\n", u, v, edgeExists(u,v)?"YES":"NO");
+        } else if (ch == 4) {
+            dispTable();
+        }
+    } while (ch != 5);
+    return 0;
+}
